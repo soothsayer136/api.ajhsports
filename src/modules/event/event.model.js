@@ -20,8 +20,9 @@ const EventSchema = new Schema({
     'fri',
     'sat',
   ]},
+  location: {type: String},
   isActive: { type:Boolean, default: true},
-  isDeleted: { type:Boolean, default: false}
+  isDeleted: { type:Boolean, default: false},
 });
 
 module.exports = mongoose.model('Event', EventSchema);

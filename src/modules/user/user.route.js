@@ -11,5 +11,6 @@ router.put('/update-profile', verifyUser, controller.updateUserProfile);
 router.put('/remove-image/:id', verifyUser, controller.removeImage);
 
 router.get('/get-profile', verifyUser, controller.getUserProfile);
+// router.get('/get', verifyUser, controller.getUserProfile);
 
 module.exports = router;

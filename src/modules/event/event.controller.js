@@ -15,6 +15,7 @@ const eventJoiSchema = Joi.object({
     startTime: Joi.string().required(),
     endTime: Joi.string().required(),
     occurrence: Joi.array().required(),
+    location: Joi.string().required(),
 });
 
 const slug = async (eventName) => {
@@ -101,7 +102,7 @@ exports.updateEvents = async (req, res, next) => {
         //check Duplicates
         const is_duplicate = await Event.findOne({
             eventName: req.body.eventName,
-            _id: { $ne: req.params.id }
+            eventSlug: { $ne: req.params.slug }
         });
 
         if (is_duplicate) {

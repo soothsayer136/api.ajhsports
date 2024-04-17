@@ -20,7 +20,7 @@ const loginJoiSchem = Joi.object({
   password: Joi.string().required(),
 })
 
-// @route POST user/register
+// @route POST u ser/register
 // @desc register new account
 exports.register = async (req, res) => {
   try {

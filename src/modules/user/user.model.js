@@ -9,6 +9,7 @@ const userSchema = new Schema(
     hash: { type: String, required: true },
     contact: { type: Number },
     address: { type: String },
+    image: { type: String },
     role: {
       type: String, enum: ['admin', 'superadmin'], default: 'admin'
     }

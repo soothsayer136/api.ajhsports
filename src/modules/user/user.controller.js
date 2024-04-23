@@ -3,7 +3,8 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const Joi = require('joi')
 const httpStatus = require('http-status')
-const { sendErrorResponse, sendSuccessResponse } = require('../../helpers/responseHelper')
+const { sendErrorResponse, sendSuccessResponse } = require('../../helpers/responseHelper');
+const upload = require('../../upload/upload');
 
 const userJoiSchema = Joi.object({
   firstname: Joi.string().required(),
@@ -131,6 +132,29 @@ exports.updateUserProfile = async (req, res) => {
   } catch (error) {
     return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update user profile', null, error.message)
   }
+}
+
+// @route PUT u ser/update-image/
+// @desc upate user image
+exports.updateUserImage = async (req, res) => {
+  upload.single('image')(req, res, async error=>{
+    if (error) {
+      return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Error during file upload');
+    }
+    try {
+      let id = req.user._id
+
+      //add path
+      if(req.file){
+        req.body.image = req.file.path.split('uploads')[1];
+      }
+
+      const profile = await User.findByIdAndUpdate(id, { $set: { ...req.body } })
+      return sendSuccessResponse(res, httpStatus.OK, 'User Image updated successfully')
+    } catch (error) {
+      return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update user profile', null, error.message)
+    }
+  })
 }
 
 // @route PUT user/get-profile/

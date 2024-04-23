@@ -1,49 +1,48 @@
-const Blog = require('./blog.model');
-const upload = require('../../upload/upload');
+const Booking = require('./booking.model');
 const { parseFilters, sendResponse, sendSuccessResponse, sendErrorResponse } = require('../../helpers/responseHelper');
 const httpStatus = require('http-status');
 const Joi = require('joi');
 
-const blogJoiSchema = Joi.object({
-  title: Joi.string().required(),
-  description: Joi.string().required()
+const bookingJoiSchema = Joi.object({
+  user: Joi.string().required(),
+  lesson: Joi.string().required()
 });
 
-// @route POST blog/
-// @desc add blog
-exports.addBlog = async (req, res) => {
+// @route POST booking/
+// @desc add booking
+exports.addBooking = async (req, res) => {
   upload.single('image')(req, res, async error => {
 
     if (error) {
       return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Error during file upload');
     }
     try {
-      const { error } = blogJoiSchema.validate(req.body);
+      const { error } = bookingJoiSchema.validate(req.body);
 
       if (error) {
-        sendErrorResponse(res, httpStatus.BAD_REQUEST, 'Failed to add blog', {}, error.message);
+        sendErrorResponse(res, httpStatus.BAD_REQUEST, 'Failed to add booking', {}, error.message);
       }
 
-      const checkBlogExists = await Blog.findOne({ title: req.body.title, is_deleted: false });
-      if (checkBlogExists) {
-        sendErrorResponse(res, httpStatus.CONFLICT, 'Blog with this title Already Exists', {});
+      const checkBookingExists = await Booking.findOne({ title: req.body.title, is_deleted: false });
+      if (checkBookingExists) {
+        sendErrorResponse(res, httpStatus.CONFLICT, 'Your Booking Already Exist', {});
       }
 
       //add path
       req.body.image = req.file.path.split('uploads')[1];
 
-      const blog = await Blog.create({ ...req.body });
-      return sendSuccessResponse(res, httpStatus.OK, 'Blog Added', blog);
+      const booking = await Booking.create({ ...req.body });
+      return sendSuccessResponse(res, httpStatus.OK, 'Booking Added', booking);
       // })
     } catch (error) {
-      return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to add blog', error.message);
+      return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to add booking', error.message);
     }
   });
 };
 
-// @route PUT blog/:id
-// @desc update blog by ID
-exports.updateBlog = async (req, res) => {
+// @route PUT booking/:id
+// @desc update booking by ID
+exports.updateBooking = async (req, res) => {
   upload.single('image')(req, res, async error => {
     try {
       //add path
@@ -51,40 +50,21 @@ exports.updateBlog = async (req, res) => {
         req.body.image = req.file.path.split('uploads')[1];
       }
 
-      const updatedBlog = await Blog.findByIdAndUpdate(req.params.id, req.body, { new: true });
-      if (!updatedBlog) {
-        return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Blog not found');
+      const updatedBooking = await Booking.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      if (!updatedBooking) {
+        return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Booking not found');
       }
-      return sendSuccessResponse(res, httpStatus.OK, 'Blog Updated', updatedBlog);
+      return sendSuccessResponse(res, httpStatus.OK, 'Booking Updated', updatedBooking);
       // })
     } catch (error) {
-      return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update blog', error.message);
+      return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update booking', error.message);
     }
   });
 };
 
-// @route PUT blog/change-status/:id
-// @desc change blog feature status
-// exports.changeFeatureStatus = async (req, res) => {
-//   try {
-//     const checkBlog = await Blog.findOne({ _id: req.params.id, is_deleted: false });
-//     if (!checkBlog) {
-//       res.json({
-//         success: false,
-//         message: 'Blog not found',
-//         // error: error.message
-//       });
-//     }
-//     const blog = await Blog.findByIdAndUpdate(req.params.id, { $set: { is_featured: req.body.status } }, { new: true });
-//     return sendSuccessResponse(res, httpStatus.OK, 'Blog feature status changed', blog);
-//   } catch (error) {
-//     return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to change blog status', error.message);
-//   }
-// };
-
-// @route GET blog/
-// @desc get all blogs
-exports.getAllBlogs = async (req, res, next) => {
+// @route GET booking/
+// @desc get all bookings
+exports.getAllBookings = async (req, res, next) => {
   try {
     let { page, limit, selectQuery, searchQuery, sortQuery, populate } = parseFilters(req);
     searchQuery = { is_deleted: false };
@@ -97,69 +77,39 @@ exports.getAllBlogs = async (req, res, next) => {
         ...searchQuery,
       };
     }
-    const blogs = await sendResponse(Blog, page, limit, sortQuery, searchQuery, selectQuery, populate, next);
-    return sendSuccessResponse(res, httpStatus.OK, 'Blog fetched', { blogs, randomBlogs });
+    const bookings = await sendResponse(Booking, page, limit, sortQuery, searchQuery, selectQuery, populate, next);
+    return sendSuccessResponse(res, httpStatus.OK, 'Booking fetched', { bookings, randomBookings });
   } catch (error) {
-    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to fetch blog', error.message);
+    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to fetch booking', error.message);
   }
 };
 
-// @route GET blog/featured-blog
-// @desc get all featured blogs
-exports.getFeaturedBlog = async (req, res) => {
+// @route GET booking/:id
+// @desc get booking by ID
+exports.getBookingById = async (req, res) => {
   try {
-    const blogs = await Blog.find({
-      is_deleted: false,
-      is_featured: true,
-    })
-    return sendSuccessResponse(res, httpStatus.OK, 'Blog fetched', blogs);
-  } catch (error) {
-    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to fetch featured blog', error.message);
-  }
-};
-
-// @route GET blog/:id
-// @desc get blog by ID
-exports.getBlogById = async (req, res) => {
-  try {
-    const blogId = req.params.id;
-    const blog = await Blog.findById(blogId).select('-__v -is_deleted -updatedAt')
+    const bookingId = req.params.id;
+    const booking = await Booking.findById(bookingId).select('-__v -is_deleted -updatedAt')
     .lean();
-    if (!blog) {
-      return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Blog not found');
+    if (!booking) {
+      return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Booking not found');
     }
-    return sendSuccessResponse(res, httpStatus.OK, 'Blog fetched', blog);
+    return sendSuccessResponse(res, httpStatus.OK, 'Booking fetched', booking);
   } catch (error) {
-    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to fetch blog', error.message);
+    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to fetch booking', error.message);
   }
 };
 
-// @route GET blog/:blog_slug
-// @desc get blog by blog slug
-exports.getBlogBySlug = async (req, res) => {
+// @route DELETE booking/:id
+// @desc delete booking by ID
+exports.deleteBooking = async (req, res) => {
   try {
-    const blog_slug = req.params.blog_slug;
-    const blog = await Blog.findOne({ blog_slug: blog_slug, is_deleted: false }).select('-__v -is_deleted -updatedAt')
-    .lean();
-    if (!blog) {
-      return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Blog not found');
+    const deletedBooking = await Booking.findByIdAndUpdate(req.params.id, { $set: { is_deleted: true } });
+    if (!deletedBooking) {
+      return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Booking not found');
     }
-    return sendSuccessResponse(res, httpStatus.OK, 'Blog fetched', blog);
+    return sendSuccessResponse(res, httpStatus.OK, 'Booking Deleted');
   } catch (error) {
-    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to fetch blog', error.message);
-  }
-};
-
-// @route DELETE blog/:id
-// @desc delete blog by ID
-exports.deleteBlog = async (req, res) => {
-  try {
-    const deletedBlog = await Blog.findByIdAndUpdate(req.params.id, { $set: { is_deleted: true } });
-    if (!deletedBlog) {
-      return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Blog not found');
-    }
-    return sendSuccessResponse(res, httpStatus.OK, 'Blog Deleted');
-  } catch (error) {
-    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to delete blog', error.message);
+    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to delete booking', error.message);
   }
 };

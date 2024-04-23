@@ -8,13 +8,13 @@ const app = express();
 connectDB().then(
   async()=>{
     const checkSuperAdmin = await userModel.findOne({
-      email: "superadmin@digicom.com",
+      email: "superadmin@ajh.com",
       role: "superadmin"
     })
     if(!checkSuperAdmin){
       //create Admin
       await userModel.create({
-        email: "superadmin@digicom.com",
+        email: "superadmin@ajh.com",
         role: "superadmin",
         firstname: "Super",
         lastname: "Admin",

@@ -50,7 +50,8 @@ const verifySuperAdmin = async (req, res, next) => {
 
 const verifyAdmin = async (req, res, next) => {
   const user = req.user;
-  if (user.role !== 'admin') {
+  console.log('user', user)
+  if (user.role !== 'admin' && user.role !== 'superadmin') {
     return handleUnauthorizedAccess(res);
   }
   next();

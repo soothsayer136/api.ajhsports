@@ -2,12 +2,10 @@ const router = require('express').Router();
 const controller = require('./booking.controller');
 const { verifyUser } = require('../../middleware/auth');
 
-router.post('/', controller.addBlog);
-router.put('/:id', controller.updateBlog);
-// router.put('/remove-image/:id', verifyUser, controller.removeImage);
-router.get('/', controller.getAllBlogs);
-router.get('/featured-blog', controller.getFeaturedBlog);
-router.get('/:id', controller.getBlogById);
-router.delete('/:id', verifyUser, controller.deleteBlog);
+router.post('/', verifyUser, controller.addBooking);
+// router.put('/:id', controller.updateBlog);
+router.get('/', controller.getAllBookings);
+router.get('/:id', controller.getBookingById);
+router.delete('/:id', verifyUser, controller.deleteBooking);
 
 module.exports = router;

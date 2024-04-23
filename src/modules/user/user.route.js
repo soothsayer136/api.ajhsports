@@ -8,6 +8,7 @@ router.post('/refresh-token', controller.refreshToken);
 router.put('/change-password', verifyUser, controller.changePassword);
 //update profile
 router.put('/update-profile', verifyUser, controller.updateUserProfile);
+router.put('/update-image', verifyUser, controller.updateUserImage);
 router.put('/remove-image/:id', verifyUser, controller.removeImage);
 
 router.get('/get-profile', verifyUser, controller.getUserProfile);

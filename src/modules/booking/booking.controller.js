@@ -3,6 +3,7 @@ const { parseFilters, sendResponse, sendSuccessResponse, sendErrorResponse } = r
 const httpStatus = require('http-status');
 const Joi = require('joi');
 const { default: Stripe } = require('stripe');
+const coachingModel = require('../coaching/coaching.model');
 const stripe = require('stripe')('sk_test_51OlkLnGxYrincDprqd6Ur9s5Svo1Aqe03SD48vkm6AdWkpt8bItk0g9JhKAlIz6PNMSaMOlbfBNQRwpnEzKkqmsw00R4Y5bQg8');
 
 const bookingJoiSchema = Joi.object({
@@ -17,26 +18,47 @@ exports.createPaymentIntent = async (req, res, next) => {
     //   email: 'testingPayment@gmail.com'
     // })
 
-    const lessons = req.body;
-    const lineItems = lessons.map((lesson) => ({
-      price_data: {
-        currency: "aud",
-        product_data: {
-          name: lesson.name,
+    const {lesson, lesson_name, lesson_type, price} = req.body;
+    const getLesson = await coachingModel.findById(lesson)
+    if(!getLesson) return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Lesson Not Found');
+
+    const lessonPriceIndex = getLesson.price.findIndex(val => val.name === lesson_name)
+    //check Lesson Name
+    if(lessonPriceIndex === -1) return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Lesson Price Not found');
+
+    const booking = await Booking.create({
+      user: req.user._id,
+      lesson: getLesson._id,
+      price,
+      lesson_name,
+      lesson_type,
+    })
+    const lineItems = [
+      {
+        price_data: {
+          currency: "aud",
+          product_data: {
+            name: getLesson.title,
+          },
+          unit_amount: price * 100,
         },
-        unit_amount: lesson?.price * 100,
-      },
-      quantity: lesson?.quantity || 1
-    }));
+        quantity: 1
+
+      }
+    ]
     
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: "http://localhost:3000/success",
+      success_url: "http://localhost:8888/success/",
       cancel_url: "http://localhost:3000/cancel",
     });
-    res.json({ id: session.id });
+    if(session.url){
+      booking.is_payed = true
+      await booking.save()
+    }
+    res.json({ id: session.id, url: session.url });
 
     // paymentIntent.create({
     //   amount: req.body.amount,
@@ -44,10 +66,21 @@ exports.createPaymentIntent = async (req, res, next) => {
     // })
     // res.json({ clientSecret: customer });
   } catch (error) {
-    console.log('error', error);
     next(error);
   }
 };
+
+// exports.successPayment = async (req, res) => {
+//   try {
+//     const booking = await Booking.findById(req.params.id)
+//     if(!booking) return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Booking Not Found');
+//     booking.is_payed = true
+//     await booking.save()
+//     res.send()
+//   } catch (error) {
+//     next(error);
+//   }
+// }
 
 // @route POST booking/
 // @desc add booking

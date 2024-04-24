@@ -2,6 +2,7 @@ const router = require('express').Router();
 const controller = require('./booking.controller');
 const { verifyUser } = require('../../middleware/auth');
 
+router.post('/create-intent', controller.createPaymentIntent);
 router.post('/', verifyUser, controller.addBooking);
 // router.put('/:id', controller.updateBlog);
 router.get('/', controller.getAllBookings);

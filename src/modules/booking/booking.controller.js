@@ -2,11 +2,52 @@ const Booking = require('./booking.model');
 const { parseFilters, sendResponse, sendSuccessResponse, sendErrorResponse } = require('../../helpers/responseHelper');
 const httpStatus = require('http-status');
 const Joi = require('joi');
+const { default: Stripe } = require('stripe');
+const stripe = require('stripe')('sk_test_51OlkLnGxYrincDprqd6Ur9s5Svo1Aqe03SD48vkm6AdWkpt8bItk0g9JhKAlIz6PNMSaMOlbfBNQRwpnEzKkqmsw00R4Y5bQg8');
 
 const bookingJoiSchema = Joi.object({
   user: Joi.string().required(),
   lesson: Joi.string().required()
 });
+
+//payment
+exports.createPaymentIntent = async (req, res, next) => {
+  try {
+    // const customer = await stripe.customers.create({
+    //   email: 'testingPayment@gmail.com'
+    // })
+
+    const lessons = req.body;
+    const lineItems = lessons.map((lesson) => ({
+      price_data: {
+        currency: "aud",
+        product_data: {
+          name: lesson.name,
+        },
+        unit_amount: lesson?.price * 100,
+      },
+      quantity: lesson?.quantity || 1
+    }));
+    
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: lineItems,
+      mode: "payment",
+      success_url: "http://localhost:3000/success",
+      cancel_url: "http://localhost:3000/cancel",
+    });
+    res.json({ id: session.id });
+
+    // paymentIntent.create({
+    //   amount: req.body.amount,
+    //   currency: 'aud'
+    // })
+    // res.json({ clientSecret: customer });
+  } catch (error) {
+    console.log('error', error);
+    next(error);
+  }
+};
 
 // @route POST booking/
 // @desc add booking
@@ -90,7 +131,7 @@ exports.getBookingById = async (req, res) => {
   try {
     const bookingId = req.params.id;
     const booking = await Booking.findById(bookingId).select('-__v -is_deleted -updatedAt')
-    .lean();
+      .lean();
     if (!booking) {
       return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Booking not found');
     }

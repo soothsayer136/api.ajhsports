@@ -7,6 +7,8 @@ const bookingSchema = new Schema(
   {
     user: { type: Schema.Types.ObjectId, ref: 'User' },
     lesson: {type: Schema.Types.ObjectId, ref: 'CoachingLesson'},
+    price: {type: Number},
+    lesson_type: {type: String, enum: ['private', 'group']},
     is_payed: { type: Boolean, default: false},
     is_deleted: { type: Boolean, default: false },
     is_active: { type: Boolean, default: true },

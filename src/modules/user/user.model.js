@@ -11,7 +11,7 @@ const userSchema = new Schema(
     address: { type: String },
     image: { type: String },
     role: {
-      type: String, enum: ['admin', 'superadmin'], default: 'admin'
+      type: String, enum: ['user', 'admin', 'superadmin'], default: 'user'
     }
   },
   { timestamps: true }

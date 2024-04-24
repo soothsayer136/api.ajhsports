@@ -70,10 +70,10 @@ const url = process.env.URL;
 const env = process.env.ENV;
 const app_name = process.env.APP_NAME;
 // Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  console.log('Uncaught Exception occured:', err.name);
-  // console.log(err.name, `:`, err.message);
-});
+// process.on('uncaughtException', (err) => {
+//   console.log('Uncaught Exception occured:', err.name);
+//   // console.log(err.name, `:`, err.message);
+// });
 
 app.use(async( err, req, res, next)=> {{
   res.status(500).json({
@@ -94,8 +94,8 @@ server.listen(port, () => {
 });
 
 // Handle unhandled rejections
-process.on('unhandledRejection', (err) => {
-  console.log('Unhandled Rejection occured:', err.name);
-  // console.log(err.name, `:`, err.message);
-});
+// process.on('unhandledRejection', (err) => {
+//   console.log('Unhandled Rejection occured:', err.name);
+//   // console.log(err.name, `:`, err.message);
+// });
  

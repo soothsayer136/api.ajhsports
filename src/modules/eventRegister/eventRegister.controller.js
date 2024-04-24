@@ -43,21 +43,26 @@ exports.addEventRegistration = async (req, res, next) => {
 exports.getEventRegistrations = async (req, res, next) => {
     try {
         let { page, limit, searchQuery, selectQuery, sortQuery, populate } = parseFilters(req);
-        // if(req.query.event){
-        //     const event = await Event.findById
-        // }
-        // if (req.query.search) {
-        //     searchQuery = {
-        //         ...searchQuery,
-        //         eventName: { $regex: req.query.search, $options: 'i' }
-        //     };
-        // }
-        // if (req.query.isActive !== undefined && req.query.isActive !== null && req.query.isActive !== "") {
-        //     searchQuery = {
-        //         ...searchQuery,
-        //         isActive: req.query.isActive 
-        //     };
-        // }
+        if(req.query.event){
+            const event = await Event.findById(req.query.event)
+            if(!event){
+                return sendErrorResponse(res, httpStatus.CONFLICT, 'Event Not Found');
+            }
+            searchQuery = {
+                ...searchQuery,
+                event: event._id
+            }
+        }
+        populate = [
+            {
+              path: 'user',
+              select: 'firstname lastname email contact'
+            },
+            {
+              path: 'event',
+              select: 'eventName eventSlug eventDescription startDate endData startTime endTime occurrence location'
+            }
+          ];
         selectQuery = '-isDeleted -__v'
         const eventRegistrations = await sendResponse(EventRegistration, page, limit, sortQuery, searchQuery, selectQuery, populate);
         return sendSuccessResponse(res, httpStatus.OK, 'Registered Users', eventRegistrations);
@@ -73,7 +78,16 @@ exports.getEventRegistration = async (req, res, next) => {
         const event = await EventRegistration.findOne({
             _id: id,
             isDeleted: false
-        }).select('-isDeleted -__v')
+        }).select('-isDeleted -__v').populate([
+            {
+              path: 'user',
+              select: 'firstname lastname email contact'
+            },
+            {
+              path: 'event',
+              select: 'eventName eventSlug eventDescription startDate endData startTime endTime occurrence location'
+            }
+          ])
         return sendSuccessResponse(res, httpStatus.OK, 'EventRegistration', event);
     } catch (error) {
         next(error);

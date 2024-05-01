@@ -7,5 +7,6 @@ router.use('/blog', require('../modules/blog/blog.route'))
 router.use('/coaching', require('../modules/coaching/coaching.route'))
 router.use('/booking', require('../modules/booking/booking.route'))
 router.use('/event-register', require('../modules/eventRegister/eventRegister.route'))
+router.use('/online-forum', require('../modules/onlineForum/onlineForum.route'))
 
 module.exports = router;

@@ -4,7 +4,7 @@ const httpStatus = require('http-status');
 const Joi = require('joi');
 const { default: Stripe } = require('stripe');
 const coachingModel = require('../coaching/coaching.model');
-console.log('ev', process.env.STRIPE_KEY)
+console.log('ev',process.env.STRIPE_KEY)
 const stripe = require('stripe')(process.env.STRIPE_KEY);
 
 const bookingJoiSchema = Joi.object({
@@ -28,8 +28,7 @@ exports.createPaymentIntent = async (req, res, next) => {
     const { lesson, lesson_name, lesson_type, price } = req.body;
     const getBooking = await Booking.findOne({
       lesson: lesson,
-      user: req.user._id,
-      is_payed: true,
+      user: req.user._id
     });
     if (getBooking) return sendErrorResponse(res, httpStatus.CONFLICT, 'Booking Already Done');
 
@@ -65,7 +64,7 @@ exports.createPaymentIntent = async (req, res, next) => {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `http://localhost:${process.env.PORT}/api/booking/payment-success/${booking._id}`,
+      success_url: `http://localhost:${process.env.PORT}/booking/payment-success/${booking._id}`,
       cancel_url: "http://localhost:3000/failure",
     });
     // if(session.id){
@@ -102,16 +101,16 @@ exports.getAllBookings = async (req, res, next) => {
   try {
     let { page, limit, selectQuery, searchQuery, sortQuery, populate } = parseFilters(req);
     searchQuery = { is_deleted: false };
-    if (req.query.lesson) {
+    if(req.query.lesson){
       const lesson = await coachingModel.findById(req.query.lesson)
-      if (!lesson) {
-        return sendErrorResponse(res, httpStatus.CONFLICT, 'Event Not Found');
+      if(!lesson){
+          return sendErrorResponse(res, httpStatus.CONFLICT, 'Event Not Found');
       }
       searchQuery = {
-        ...searchQuery,
-        lesson: lesson._id
+          ...searchQuery,
+          lesson: lesson._id
       }
-    }
+  }
     populate = [
       {
         path: 'user',
@@ -133,7 +132,7 @@ exports.getAllBookings = async (req, res, next) => {
     //   };
     // }
     const bookings = await sendResponse(Booking, page, limit, sortQuery, searchQuery, selectQuery, populate, next);
-    return sendSuccessResponse(res, httpStatus.OK, 'Booking fetched', bookings);
+    return sendSuccessResponse(res, httpStatus.OK, 'Booking fetched', bookings );
   } catch (error) {
     return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to fetch booking', error.message);
   }
@@ -146,7 +145,7 @@ exports.getMyBooking = async (req, res, next) => {
     let { page, limit, selectQuery, searchQuery, sortQuery, populate } = parseFilters(req);
     searchQuery = {
       user: req.user._id,
-      is_payed: true,
+      is_payed: false,
       is_deleted: false
     };
     populate = [

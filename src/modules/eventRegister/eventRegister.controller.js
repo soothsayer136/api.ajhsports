@@ -8,10 +8,31 @@ const EventRegistration = require("./eventRegister.model");
 const Joi = require("joi");
 const Event = require("../event/event.model");
 const userModel = require("../user/user.model");
+const coachingModel = require("../coaching/coaching.model");
+const bookingModel = require("../booking/booking.model");
+const noticeModel = require("../notice/notice.model");
 
 const eventJoiSchema = Joi.object({
     event: Joi.string().required()
 });
+
+const addNotice = async (lessons, event, user) => {
+    const receiver = await bookingModel.distinct('user', {
+        lesson: { $in: lessons },
+        user: { $ne: user._id }
+    });
+
+    console.log(receiver);
+    if (receiver.length > 0) {
+        const _event = await Event.findById(event);
+        await noticeModel.create({
+            message: `${_event.eventName} is Recommended for you. Since, ${user.firstname} ${user.lastname} is going to the Event.`,
+            event: event,
+            receiver,
+            sender: user._id
+        });
+    }
+};
 
 exports.addEventRegistration = async (req, res, next) => {
     try {
@@ -33,7 +54,17 @@ exports.addEventRegistration = async (req, res, next) => {
             return sendErrorResponse(res, httpStatus.CONFLICT, 'Already Registered');
         }
 
+        // Add Notice
+        //Check if user is associated in any coaching sessions.
+        const lesson = await bookingModel.distinct('lesson', {
+            user: req.user._id
+        });
+
+        
         const event = await EventRegistration.create({ ...req.body, user: req.user._id });
+        if (lesson.length > 0) {
+            await addNotice(lesson, req.body.event, req.user);
+        }
         return sendSuccessResponse(res, httpStatus.OK, 'EventRegistration Added', event);
     } catch (error) {
         console.log("err", error);

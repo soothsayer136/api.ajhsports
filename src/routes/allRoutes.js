@@ -8,5 +8,6 @@ router.use('/coaching', require('../modules/coaching/coaching.route'))
 router.use('/booking', require('../modules/booking/booking.route'))
 router.use('/event-register', require('../modules/eventRegister/eventRegister.route'))
 router.use('/online-forum', require('../modules/onlineForum/onlineForum.route'))
+router.use('/notice', require('../modules/notice/notice.route'))
 
 module.exports = router;

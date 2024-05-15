@@ -6,31 +6,31 @@ const path = require('path');
 const connectDB = require('./src/database/db');
 const app = express();
 connectDB().then(
-  async()=>{
+  async () => {
     const checkSuperAdmin = await userModel.findOne({
       email: "superadmin@ajh.com",
       role: "superadmin"
-    })
-    if(!checkSuperAdmin){
+    });
+    if (!checkSuperAdmin) {
       //create Admin
       await userModel.create({
         email: "superadmin@ajh.com",
         role: "superadmin",
         firstname: "Super",
         lastname: "Admin",
-        hash:"$2a$10$YL1LurPkeUu41HWk1bMg8uSOxY6ScQYF0M44eqNUl6LhO5t06uaTy"
-      })
+        hash: "$2a$10$YL1LurPkeUu41HWk1bMg8uSOxY6ScQYF0M44eqNUl6LhO5t06uaTy"
+      });
     }
   }
 ).catch(
-  async(err)=>{
-    console.log("errrr:", err)
+  async (err) => {
+    console.log("errrr:", err);
   }
-)
- 
+);
+
 // Enable CORS with proper configuration
-app.use( 
-  cors( {
+app.use(
+  cors({
     origin: function (origin, callback) {
       const allowedOrigins = process.env.URL;
 
@@ -38,7 +38,7 @@ app.use(
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
-       } 
+      }
     },
     credentials: true
   })
@@ -53,7 +53,7 @@ app.use(
 );
 
 // Serve static files
-app.use('/',express.static(path.join(__dirname, './public/uploads/')));
+app.use('/', express.static(path.join(__dirname, './public/uploads/')));
 // Define a default route to check if the server is connected
 app.get('/', (req, res) => {
   res.send('Connected');
@@ -75,12 +75,14 @@ const app_name = process.env.APP_NAME;
 //   // console.log(err.name, `:`, err.message);
 // });
 
-app.use(async( err, req, res, next)=> {{
-  res.status(500).json({
-    success: false,
-    message: err.message || "Internal Server Error!!"
-  })
-}})
+app.use(async (err, req, res, next) => {
+  {
+    res.status(500).json({
+      success: false,
+      message: err.message || "Internal Server Error!!"
+    });
+  }
+});
 app.set('PORT', port);
 const server = http.createServer(app);
 
@@ -93,9 +95,10 @@ server.listen(port, () => {
   );
 });
 
+
+module.exports = { app, server };
 // Handle unhandled rejections
 // process.on('unhandledRejection', (err) => {
 //   console.log('Unhandled Rejection occured:', err.name);
 //   // console.log(err.name, `:`, err.message);
 // });
- 

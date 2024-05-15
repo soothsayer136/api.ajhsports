@@ -30,7 +30,8 @@ exports.createPaymentIntent = async (req, res, next) => {
     const { lesson, lesson_name, lesson_type, price } = req.body;
     const getBooking = await Booking.findOne({
       lesson: lesson,
-      user: req.user._id
+      user: req.user._id,
+      is_payed: true
     });
     if (getBooking) return sendErrorResponse(res, httpStatus.CONFLICT, 'Booking Already Done');
 

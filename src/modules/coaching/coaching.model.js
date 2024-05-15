@@ -17,7 +17,7 @@ const coachingLessonSchema = new Schema(
     slug: { type: String, unique: true, index: true, slug: 'title' },
     price: { type: [Price] },
     time: { type: String },
-    interval: { type: Number},
+    interval: { type: String},
     location: { type: String },
     is_deleted: { type: Boolean, default: false },
     is_active: { type: Boolean, default: true },

@@ -41,7 +41,8 @@ exports.addEvent = async (req, res, next) => {
         }
         //check Duplicates
         const is_duplicate = await Event.findOne({
-            eventName: req.body.eventName
+            eventName: req.body.eventName,
+            isDeleted: false
         });
 
         if (is_duplicate) {
@@ -102,7 +103,8 @@ exports.updateEvents = async (req, res, next) => {
         //check Duplicates
         const is_duplicate = await Event.findOne({
             eventName: req.body.eventName,
-            eventSlug: { $ne: req.params.slug }
+            eventSlug: { $ne: req.params.slug },
+            isDeleted: false
         });
 
         if (is_duplicate) {

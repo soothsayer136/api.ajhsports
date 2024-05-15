@@ -58,13 +58,13 @@ exports.getNotice = async (req, res, next) => {
                     //     location: 1
                     // },
                     event: 1,
-                    match:1,
                     sender: {
                         firstname: 1,
                         lastname: 1,
                         email: 1,
                         contact: 1
                     },
+                    match: 1,
                     lesson: 1,
                     is_read: {
                         $cond: {

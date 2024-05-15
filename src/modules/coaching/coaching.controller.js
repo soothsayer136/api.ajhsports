@@ -1,8 +1,13 @@
-const CoachingLesson = require('./coaching.model');
-const upload = require('../../upload/upload');
-const { parseFilters, sendResponse, sendSuccessResponse, sendErrorResponse } = require('../../helpers/responseHelper');
-const httpStatus = require('http-status');
-const Joi = require('joi');
+const CoachingLesson = require("./coaching.model");
+const upload = require("../../upload/upload");
+const {
+  parseFilters,
+  sendResponse,
+  sendSuccessResponse,
+  sendErrorResponse,
+} = require("../../helpers/responseHelper");
+const httpStatus = require("http-status");
+const Joi = require("joi");
 
 const coachingJoiSchema = Joi.object({
   title: Joi.string().required(),
@@ -11,10 +16,10 @@ const coachingJoiSchema = Joi.object({
     Joi.object({
       name: Joi.string().required(),
       private: Joi.number().min(1),
-      group: Joi.number().min(1)
+      group: Joi.number().min(1),
     })
   ),
-  time: Joi.string().required(),
+  time: Joi.string().optional(),
   interval: Joi.string().optional(),
   location: Joi.string().optional(),
 });
@@ -22,34 +27,61 @@ const coachingJoiSchema = Joi.object({
 // @route POST coaching/
 // @desc add coaching
 exports.addCoaching = async (req, res) => {
-  upload.single('image')(req, res, async error => {
-
+  upload.single("image")(req, res, async (error) => {
     if (error) {
-      return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Error during file upload');
+      return sendErrorResponse(
+        res,
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Error during file upload"
+      );
     }
     try {
-      if (typeof req.body.price === 'string') {
+      if (typeof req.body.price === "string") {
         req.body.price = JSON.parse(req.body.price);
       }
       const { error } = coachingJoiSchema.validate(req.body);
 
       if (error) {
-        return sendErrorResponse(res, httpStatus.BAD_REQUEST, 'Failed to add coaching', {}, error.message);
+        sendErrorResponse(
+          res,
+          httpStatus.BAD_REQUEST,
+          "Failed to add coaching",
+          {},
+          error.message
+        );
       }
 
-      const checkCoachingExists = await CoachingLesson.findOne({ title: req.body.title, is_deleted: false });
+      const checkCoachingExists = await CoachingLesson.findOne({
+        title: req.body.title,
+        is_deleted: false,
+      });
       if (checkCoachingExists) {
-        sendErrorResponse(res, httpStatus.CONFLICT, 'Coaching with this title Already Exists', {});
+        sendErrorResponse(
+          res,
+          httpStatus.CONFLICT,
+          "Coaching with this title Already Exists",
+          {}
+        );
       }
 
       //add path
-      if (req.file) req.body.image = req.file.path.split('uploads')[1];
+      if (req.file) req.body.image = req.file.path.split("uploads")[1];
 
       const coaching = await CoachingLesson.create({ ...req.body });
-      return sendSuccessResponse(res, httpStatus.OK, 'Coaching Added', coaching);
+      return sendSuccessResponse(
+        res,
+        httpStatus.OK,
+        "Coaching Added",
+        coaching
+      );
       // })
     } catch (error) {
-      return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to add coaching', error.message);
+      return sendErrorResponse(
+        res,
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Failed to add coaching",
+        error.message
+      );
     }
   });
 };
@@ -57,27 +89,43 @@ exports.addCoaching = async (req, res) => {
 // @route PUT coaching/:id
 // @desc update coaching by ID
 exports.updateCoaching = async (req, res) => {
-  upload.single('image')(req, res, async error => {
+  upload.single("image")(req, res, async (error) => {
     try {
       //add path
       if (req.file) {
-        req.body.image = req.file.path.split('uploads')[1];
+        req.body.image = req.file.path.split("uploads")[1];
       }
 
-      if (typeof req.body.price === 'string') {
+      if (typeof req.body.price === "string") {
         req.body.price = JSON.parse(req.body.price);
       }
 
-      console.log("error", req.params.id)
-      const updatedCoaching = await CoachingLesson.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      const updatedCoaching = await CoachingLesson.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        { new: true }
+      );
       if (!updatedCoaching) {
-        return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Coaching not found');
+        return sendErrorResponse(
+          res,
+          httpStatus.NOT_FOUND,
+          "Coaching not found"
+        );
       }
-      return sendSuccessResponse(res, httpStatus.OK, 'Coaching Updated', updatedCoaching);
+      return sendSuccessResponse(
+        res,
+        httpStatus.OK,
+        "Coaching Updated",
+        updatedCoaching
+      );
       // })
     } catch (error) {
-      console.log(error)
-      return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update coaching', error.message);
+      return sendErrorResponse(
+        res,
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Failed to update coaching",
+        error.message
+      );
     }
   });
 };
@@ -105,21 +153,41 @@ exports.updateCoaching = async (req, res) => {
 // @desc get all coachings
 exports.getAllCoachings = async (req, res, next) => {
   try {
-    let { page, limit, selectQuery, searchQuery, sortQuery, populate } = parseFilters(req);
+    let { page, limit, selectQuery, searchQuery, sortQuery, populate } =
+      parseFilters(req);
     searchQuery = { is_deleted: false };
     if (req.query.search) {
       searchQuery = {
         title: {
           $regex: req.query.search,
-          $options: 'i',
+          $options: "i",
         },
         ...searchQuery,
       };
     }
-    const coachings = await sendResponse(CoachingLesson, page, limit, sortQuery, searchQuery, selectQuery, populate, next);
-    return sendSuccessResponse(res, httpStatus.OK, 'Coaching fetched', coachings);
+    const coachings = await sendResponse(
+      CoachingLesson,
+      page,
+      limit,
+      sortQuery,
+      searchQuery,
+      selectQuery,
+      populate,
+      next
+    );
+    return sendSuccessResponse(
+      res,
+      httpStatus.OK,
+      "Coaching fetched",
+      coachings
+    );
   } catch (error) {
-    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to fetch coaching', error.message);
+    return sendErrorResponse(
+      res,
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to fetch coaching",
+      error.message
+    );
   }
 };
 
@@ -131,9 +199,19 @@ exports.getFeaturedCoaching = async (req, res) => {
       is_deleted: false,
       is_featured: true,
     });
-    return sendSuccessResponse(res, httpStatus.OK, 'Coaching fetched', coachings);
+    return sendSuccessResponse(
+      res,
+      httpStatus.OK,
+      "Coaching fetched",
+      coachings
+    );
   } catch (error) {
-    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to fetch featured coaching', error.message);
+    return sendErrorResponse(
+      res,
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to fetch featured coaching",
+      error.message
+    );
   }
 };
 
@@ -142,14 +220,28 @@ exports.getFeaturedCoaching = async (req, res) => {
 exports.getCoachingById = async (req, res) => {
   try {
     const coachingId = req.params.id;
-    const coaching = await CoachingLesson.findOne({ _id: coachingId, is_deleted: false }).select('-__v -is_deleted -updatedAt')
+    const coaching = await CoachingLesson.findOne({
+      _id: coachingId,
+      is_deleted: false,
+    })
+      .select("-__v -is_deleted -updatedAt")
       .lean();
     if (!coaching) {
-      return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Coaching not found');
+      return sendErrorResponse(res, httpStatus.NOT_FOUND, "Coaching not found");
     }
-    return sendSuccessResponse(res, httpStatus.OK, 'Coaching fetched', coaching);
+    return sendSuccessResponse(
+      res,
+      httpStatus.OK,
+      "Coaching fetched",
+      coaching
+    );
   } catch (error) {
-    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to fetch coaching', error.message);
+    return sendErrorResponse(
+      res,
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to fetch coaching",
+      error.message
+    );
   }
 };
 
@@ -158,14 +250,28 @@ exports.getCoachingById = async (req, res) => {
 exports.getCoachingBySlug = async (req, res) => {
   try {
     const coaching_slug = req.params.coaching_slug;
-    const coaching = await CoachingLesson.findOne({ coaching_slug: coaching_slug, is_deleted: false }).select('-__v -is_deleted -updatedAt')
+    const coaching = await CoachingLesson.findOne({
+      coaching_slug: coaching_slug,
+      is_deleted: false,
+    })
+      .select("-__v -is_deleted -updatedAt")
       .lean();
     if (!coaching) {
-      return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Coaching not found');
+      return sendErrorResponse(res, httpStatus.NOT_FOUND, "Coaching not found");
     }
-    return sendSuccessResponse(res, httpStatus.OK, 'Coaching fetched', coaching);
+    return sendSuccessResponse(
+      res,
+      httpStatus.OK,
+      "Coaching fetched",
+      coaching
+    );
   } catch (error) {
-    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to fetch coaching', error.message);
+    return sendErrorResponse(
+      res,
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to fetch coaching",
+      error.message
+    );
   }
 };
 
@@ -173,13 +279,20 @@ exports.getCoachingBySlug = async (req, res) => {
 // @desc delete coaching by ID
 exports.deleteCoaching = async (req, res) => {
   try {
-    console.log("error", req.params.id)
-    const deletedCoaching = await CoachingLesson.findByIdAndUpdate(req.params.id, { $set: { is_deleted: true } });
+    const deletedCoaching = await CoachingLesson.findByIdAndUpdate(
+      req.params.id,
+      { $set: { is_deleted: true } }
+    );
     if (!deletedCoaching) {
-      return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Coaching not found');
+      return sendErrorResponse(res, httpStatus.NOT_FOUND, "Coaching not found");
     }
-    return sendSuccessResponse(res, httpStatus.OK, 'Coaching Deleted');
+    return sendSuccessResponse(res, httpStatus.OK, "Coaching Deleted");
   } catch (error) {
-    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to delete coaching', error.message);
+    return sendErrorResponse(
+      res,
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to delete coaching",
+      error.message
+    );
   }
 };

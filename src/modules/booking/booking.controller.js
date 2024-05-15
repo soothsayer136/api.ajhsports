@@ -1,19 +1,24 @@
-const Booking = require('./booking.model');
-const { parseFilters, sendResponse, sendSuccessResponse, sendErrorResponse } = require('../../helpers/responseHelper');
-const httpStatus = require('http-status');
-const Joi = require('joi');
-const { default: Stripe } = require('stripe');
-const coachingModel = require('../coaching/coaching.model');
-const userModel = require('../user/user.model');
-const noticeModel = require('../notice/notice.model');
-console.log('ev',process.env.STRIPE_KEY)
-const stripe = require('stripe')(process.env.STRIPE_KEY);
+const Booking = require("./booking.model");
+const {
+  parseFilters,
+  sendResponse,
+  sendSuccessResponse,
+  sendErrorResponse,
+} = require("../../helpers/responseHelper");
+const httpStatus = require("http-status");
+const Joi = require("joi");
+const { default: Stripe } = require("stripe");
+const coachingModel = require("../coaching/coaching.model");
+const userModel = require("../user/user.model");
+const noticeModel = require("../notice/notice.model");
+console.log("ev", process.env.STRIPE_KEY);
+const stripe = require("stripe")(process.env.STRIPE_KEY);
 
 const bookingJoiSchema = Joi.object({
   lesson: Joi.string().required(),
   lesson_name: Joi.string().required(),
   lesson_type: Joi.string().required(),
-  price: Joi.number().required()
+  price: Joi.number().required(),
 });
 
 //payment
@@ -24,23 +29,42 @@ exports.createPaymentIntent = async (req, res, next) => {
     // })
     const { error } = await bookingJoiSchema.validate(req.body);
     if (error) {
-      sendErrorResponse(res, httpStatus.BAD_REQUEST, 'Booking Failed', {}, error.message);
+      sendErrorResponse(
+        res,
+        httpStatus.BAD_REQUEST,
+        "Booking Failed",
+        {},
+        error.message
+      );
     }
 
     const { lesson, lesson_name, lesson_type, price } = req.body;
     const getBooking = await Booking.findOne({
       lesson: lesson,
       user: req.user._id,
-      is_payed: true
+      is_payed: true,
     });
-    if (getBooking) return sendErrorResponse(res, httpStatus.CONFLICT, 'Booking Already Done');
+    if (getBooking)
+      return sendErrorResponse(
+        res,
+        httpStatus.CONFLICT,
+        "Booking Already Done"
+      );
 
     const getLesson = await coachingModel.findById(lesson);
-    if (!getLesson) return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Lesson Not Found');
+    if (!getLesson)
+      return sendErrorResponse(res, httpStatus.NOT_FOUND, "Lesson Not Found");
 
-    const lessonPriceIndex = getLesson.price.findIndex(val => val.name === lesson_name);
+    const lessonPriceIndex = getLesson.price.findIndex(
+      (val) => val.name === lesson_name
+    );
     //check Lesson Name
-    if (lessonPriceIndex === -1) return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Lesson Price Not found');
+    if (lessonPriceIndex === -1)
+      return sendErrorResponse(
+        res,
+        httpStatus.NOT_FOUND,
+        "Lesson Price Not found"
+      );
 
     const booking = await Booking.create({
       user: req.user._id,
@@ -58,9 +82,8 @@ exports.createPaymentIntent = async (req, res, next) => {
           },
           unit_amount: price * 100,
         },
-        quantity: 1
-
-      }
+        quantity: 1,
+      },
     ];
 
     const session = await stripe.checkout.sessions.create({
@@ -87,36 +110,37 @@ exports.createPaymentIntent = async (req, res, next) => {
 };
 
 const addNotice = async (lesson, user) => {
-  const users = await Booking.distinct('user', {
-      lesson: lesson,
-      user: { $ne: user }
+  const users = await Booking.distinct("user", {
+    lesson: lesson,
+    user: { $ne: user },
   });
 
-  
-  const _user = await userModel.findById(user)
-  const receiver = await userModel.distinct('_id', {
-    _id: {$in: users}, expertiseLevel: _user.expertiseLevel
-  })
+  const _user = await userModel.findById(user);
+  const receiver = await userModel.distinct("_id", {
+    _id: { $in: users },
+    expertiseLevel: _user.expertiseLevel,
+  });
 
   if (receiver.length > 0) {
-      await noticeModel.create({
-          message: `Match Recommendation!! ${_user.firstname} ${_user.lastname} and you matched for a Match.`,
-          lesson: lesson,
-          receiver,
-          sender: user
-      });
+    await noticeModel.create({
+      message: `Match Recommendation!! ${_user.firstname} ${_user.lastname} and you matched for a Match.`,
+      lesson: lesson,
+      receiver,
+      sender: user,
+    });
   }
 };
 
 exports.successPayment = async (req, res, next) => {
   try {
     const booking = await Booking.findById(req.params.id);
-    if (!booking) return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Booking Not Found');
+    if (!booking)
+      return sendErrorResponse(res, httpStatus.NOT_FOUND, "Booking Not Found");
     booking.is_payed = true;
     //send notice
     addNotice(booking.lesson, booking.user);
     await booking.save();
-    return res.redirect(301, 'http://localhost:3000/success');
+    return res.redirect(301, "http://localhost:3000/success");
   } catch (error) {
     next(error);
   }
@@ -126,29 +150,30 @@ exports.successPayment = async (req, res, next) => {
 // @desc get all bookings
 exports.getAllBookings = async (req, res, next) => {
   try {
-    let { page, limit, selectQuery, searchQuery, sortQuery, populate } = parseFilters(req);
+    let { page, limit, selectQuery, searchQuery, sortQuery, populate } =
+      parseFilters(req);
     searchQuery = { is_deleted: false };
-    if(req.query.lesson){
-      const lesson = await coachingModel.findById(req.query.lesson)
-      if(!lesson){
-          return sendErrorResponse(res, httpStatus.CONFLICT, 'Event Not Found');
+    if (req.query.lesson) {
+      const lesson = await coachingModel.findById(req.query.lesson);
+      if (!lesson) {
+        return sendErrorResponse(res, httpStatus.CONFLICT, "Event Not Found");
       }
       searchQuery = {
-          ...searchQuery,
-          lesson: lesson._id
-      }
-  }
+        ...searchQuery,
+        lesson: lesson._id,
+      };
+    }
     populate = [
       {
-        path: 'user',
-        select: 'firstname lastname email contact'
+        path: "user",
+        select: "firstname lastname email contact",
       },
       {
-        path: 'lesson',
-        select: 'title image description slug price'
-      }
+        path: "lesson",
+        select: "title image description slug price",
+      },
     ];
-    selectQuery = '-__v -is_deleted -updatedAt';
+    selectQuery = "-__v -is_deleted -updatedAt";
     // if (req.query.search) {
     //   searchQuery = {
     //     title: {
@@ -158,10 +183,24 @@ exports.getAllBookings = async (req, res, next) => {
     //     ...searchQuery,
     //   };
     // }
-    const bookings = await sendResponse(Booking, page, limit, sortQuery, searchQuery, selectQuery, populate, next);
-    return sendSuccessResponse(res, httpStatus.OK, 'Booking fetched', bookings );
+    const bookings = await sendResponse(
+      Booking,
+      page,
+      limit,
+      sortQuery,
+      searchQuery,
+      selectQuery,
+      populate,
+      next
+    );
+    return sendSuccessResponse(res, httpStatus.OK, "Booking fetched", bookings);
   } catch (error) {
-    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to fetch booking', error.message);
+    return sendErrorResponse(
+      res,
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to fetch booking",
+      error.message
+    );
   }
 };
 
@@ -169,26 +208,41 @@ exports.getAllBookings = async (req, res, next) => {
 // @desc get my booking
 exports.getMyBooking = async (req, res, next) => {
   try {
-    let { page, limit, selectQuery, searchQuery, sortQuery, populate } = parseFilters(req);
+    let { page, limit, selectQuery, searchQuery, sortQuery, populate } =
+      parseFilters(req);
     searchQuery = {
       user: req.user._id,
       is_payed: true,
-      is_deleted: false
+      is_deleted: false,
     };
     populate = [
       {
-        path: 'user',
-        select: 'firstname lastname email contact'
+        path: "user",
+        select: "firstname lastname email contact",
       },
       {
-        path: 'lesson',
-        select: 'title image description slug price'
-      }
+        path: "lesson",
+        select: "title image description slug price",
+      },
     ];
-    selectQuery = '-__v -is_deleted -updatedAt';
-    const bookings = await sendResponse(Booking, page, limit, sortQuery, searchQuery, selectQuery, populate, next);
-    return sendSuccessResponse(res, httpStatus.OK, 'Booking fetched', bookings);
+    selectQuery = "-__v -is_deleted -updatedAt";
+    const bookings = await sendResponse(
+      Booking,
+      page,
+      limit,
+      sortQuery,
+      searchQuery,
+      selectQuery,
+      populate,
+      next
+    );
+    return sendSuccessResponse(res, httpStatus.OK, "Booking fetched", bookings);
   } catch (error) {
-    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, 'Failed to fetch booking', error.message);
+    return sendErrorResponse(
+      res,
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to fetch booking",
+      error.message
+    );
   }
 };

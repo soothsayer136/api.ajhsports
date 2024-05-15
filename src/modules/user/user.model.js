@@ -10,6 +10,14 @@ const userSchema = new Schema(
     contact: { type: Number },
     address: { type: String },
     image: { type: String },
+    expertiseLevel: {
+      type: String,
+      enum: ["new",
+        "beginner",
+        "intermediate",
+        "advanced"],
+      default: 'new'
+    },
     role: {
       type: String, enum: ['user', 'admin', 'superadmin'], default: 'user'
     }

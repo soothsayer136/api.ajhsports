@@ -13,7 +13,11 @@ const coachingJoiSchema = Joi.object({
       private: Joi.number().min(1),
       group: Joi.number().min(1)
     })
-  )
+  ),
+  time: Joi.string().required(),
+  interval: Joi.number().required(),
+  location: Joi.string().required(),
+  expertiseLevel: Joi.string().required(),
 });
 
 // @route POST coaching/
@@ -137,7 +141,7 @@ exports.getFeaturedCoaching = async (req, res) => {
 exports.getCoachingById = async (req, res) => {
   try {
     const coachingId = req.params.id;
-    const coaching = await CoachingLesson.findOne({_id:coachingId, is_deleted: false}).select('-__v -is_deleted -updatedAt')
+    const coaching = await CoachingLesson.findOne({ _id: coachingId, is_deleted: false }).select('-__v -is_deleted -updatedAt')
       .lean();
     if (!coaching) {
       return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Coaching not found');

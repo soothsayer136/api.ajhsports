@@ -13,6 +13,7 @@ const userJoiSchema = Joi.object({
   password: Joi.string().required(),
   contact: Joi.string().required(),
   address: Joi.string().optional(),
+  expertiseLevel: Joi.string().optional(),
   image: Joi.string().optional().allow(''),
 })
 

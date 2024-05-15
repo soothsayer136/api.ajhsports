@@ -4,10 +4,10 @@ const slug = require('mongoose-slug-updater');
 mongoose.plugin(slug);
 
 const Price = {
-  name: {type: String},
-  private: {type: Number},
-  group: {type: Number}
-}
+  name: { type: String },
+  private: { type: Number },
+  group: { type: Number }
+};
 
 const coachingLessonSchema = new Schema(
   {
@@ -15,7 +15,10 @@ const coachingLessonSchema = new Schema(
     title: { type: String, required: true },
     description: { type: String, required: true },
     slug: { type: String, unique: true, index: true, slug: 'title' },
-    price: { type: [Price]},
+    price: { type: [Price] },
+    time: { type: String },
+    interval: { type: Number},
+    location: { type: String },
     is_deleted: { type: Boolean, default: false },
     is_active: { type: Boolean, default: true },
   },

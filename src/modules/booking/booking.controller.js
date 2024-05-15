@@ -4,6 +4,8 @@ const httpStatus = require('http-status');
 const Joi = require('joi');
 const { default: Stripe } = require('stripe');
 const coachingModel = require('../coaching/coaching.model');
+const userModel = require('../user/user.model');
+const noticeModel = require('../notice/notice.model');
 console.log('ev',process.env.STRIPE_KEY)
 const stripe = require('stripe')(process.env.STRIPE_KEY);
 
@@ -83,11 +85,35 @@ exports.createPaymentIntent = async (req, res, next) => {
   }
 };
 
+const addNotice = async (lesson, user) => {
+  const users = await Booking.distinct('user', {
+      lesson: lesson,
+      user: { $ne: user }
+  });
+
+  
+  const _user = await userModel.findById(user)
+  const receiver = await userModel.distinct('_id', {
+    _id: {$in: users}, expertiseLevel: _user.expertiseLevel
+  })
+
+  if (receiver.length > 0) {
+      await noticeModel.create({
+          message: `Match Recommendation!! ${_user.firstname} ${_user.lastname} and you matched for a Match.`,
+          lesson: lesson,
+          receiver,
+          sender: user
+      });
+  }
+};
+
 exports.successPayment = async (req, res, next) => {
   try {
     const booking = await Booking.findById(req.params.id);
     if (!booking) return sendErrorResponse(res, httpStatus.NOT_FOUND, 'Booking Not Found');
     booking.is_payed = true;
+    //send notice
+    addNotice(booking.lesson, booking.user);
     await booking.save();
     return res.redirect(301, 'http://localhost:3000/success');
   } catch (error) {

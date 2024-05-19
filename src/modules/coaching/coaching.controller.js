@@ -42,7 +42,7 @@ exports.addCoaching = async (req, res) => {
       const { error } = coachingJoiSchema.validate(req.body);
 
       if (error) {
-        sendErrorResponse(
+        return sendErrorResponse(
           res,
           httpStatus.BAD_REQUEST,
           "Failed to add coaching",
